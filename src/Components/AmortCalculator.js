@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import Periods from './Periods';
 import CriteriaPanel from './CriteriaPanel';
+import ErrorPanel from './ErrorPanel';
 import {Table} from 'react-bootstrap';
 
 class AmortCalculator extends Component{
@@ -21,66 +22,89 @@ class AmortCalculator extends Component{
 
       let newAmount = parseFloat(loanAmount);
       let loanTerm = parseInt(term);
-      let monthlyPayment = loanAmount/((Math.pow((1+(rate*.01/12)), loanTerm))-1)*((rate*.01/12)*Math.pow((1+(rate*.01/12)), loanTerm));
-      
-      for (var i=1; i <= loanTerm; i++ ){
-        let interest = newAmount*rate*.01/12;
-        calcPeriods.push({
-          id: i,
-          previousbalance: newAmount,
-          payment: monthlyPayment,
-          principalPaid: monthlyPayment - interest,
-          interestPaid: interest,
-          newbalance: newAmount = (newAmount + interest - monthlyPayment)
-        });
-      }
 
-      return calcPeriods;
-    };
+      let errorMessage = '';
+
+      let monthlyPayment = loanAmount/((Math.pow((1+(rate*.01/12)), loanTerm))-1)*((rate*.01/12)*Math.pow((1+(rate*.01/12)), loanTerm));
+      if (isNaN(monthlyPayment)){
+        errorMessage = 'Invalid criteria resulted in loan that could not be calculated or loan that does not terminate.';      
+      }
+      else
+      {
+        for (var i=1; i <= loanTerm; i++ ){
+          let interest = newAmount*rate*.01/12;
+          calcPeriods.push({
+            id: i,
+            previousbalance: newAmount,
+            payment: monthlyPayment,
+            principalPaid: monthlyPayment - interest,
+            interestPaid: interest,
+            newbalance: newAmount = (newAmount + interest - monthlyPayment)
+          });
+        }  
+      }      
+
+      return {
+        periods: calcPeriods,
+        errorMessage:  errorMessage
+      };
+    }
 
     CalculatePeriodsByMonthlyPayment = (loanAmount, rate, monthlyPayment) => {
       var calcPeriods = [];
       let newAmount = parseFloat(loanAmount);
       let loanTerm = -1*Math.log( 1- (loanAmount*rate*.01/(12*monthlyPayment)) )/Math.log(1+(rate*.01/12));
 
-      for (var i=1; i <= loanTerm; i++ ){
-        let interest = newAmount*rate*.01/12;
-        calcPeriods.push({
-          id: i,
-          previousbalance: newAmount,
-          payment: monthlyPayment,
-          principalPaid: monthlyPayment - interest,
-          interestPaid: interest,
-          newbalance: newAmount = (newAmount + interest - monthlyPayment)
-        });
-      }
+      let errorMessage = '';
 
-      return calcPeriods;
+      if (isNaN(loanTerm)){
+        errorMessage = 'Invalid criteria resulted in loan that could not be calculated or loan that does not terminate.'        
+      }
+      else{
+        for (var i=1; i <= loanTerm; i++ ){
+          let interest = newAmount*rate*.01/12;
+          calcPeriods.push({
+            id: i,
+            previousbalance: newAmount,
+            payment: monthlyPayment,
+            principalPaid: monthlyPayment - interest,
+            interestPaid: interest,
+            newbalance: newAmount = (newAmount + interest - monthlyPayment)
+          });
+        }         
+      } 
+
+      return {
+        periods: calcPeriods,
+        errorMessage: errorMessage
+      }
     }
 
 
     CalculatePeriods = (criteria) => {
-        console.log('Calculating periods');
         var loanAmount = criteria.loanAmount;
-        var rate = parseFloat(criteria.interestRate);                
+        var rate = parseFloat(criteria.interestRate);
+        
+        let results = null;
 
         if (criteria.loanTerm !== '')
         {
-          var term = parseInt(criteria.loanTerm);          
+          var term = parseInt(criteria.loanTerm); 
+          results = this.CalcuatePeriodsByTerm(loanAmount, rate, term);         
 
-          this.setState(
-            {periods: this.CalcuatePeriodsByTerm(loanAmount, rate, term)}
-          );
+          
           
         }
         else{
           var payment = parseFloat(criteria.monthlyPayment);
-          this.setState(
-            {periods: this.CalculatePeriodsByMonthlyPayment(loanAmount, rate, payment)}
-          );  
-
-          //console.log('term not set');
+          results = this.CalculatePeriodsByMonthlyPayment(loanAmount, rate, payment);        
         }
+
+        this.setState(
+          { errorMessage: results.errorMessage,
+            periods: results.periods
+          }
+        );
         
     };  
 
@@ -88,6 +112,7 @@ class AmortCalculator extends Component{
         return (
             <div>
             <h1>Simple Loan Amortization Calculator</h1>
+            <ErrorPanel errorMessage={this.state.errorMessage}/>
             <CriteriaPanel CalculatePeriods={this.CalculatePeriods}/>
             <Table striped bordered hover size="sm"> 
             <thead>
@@ -109,7 +134,7 @@ class AmortCalculator extends Component{
     }
 
     componentDidMount() {
-        console.log('I was triggered during componentDidMount')
+        
     }
 
 }

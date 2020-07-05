@@ -124,7 +124,7 @@ class CriteriaPanel extends Component{
                                 disabled={this.state.loanTerm.toString().trim().length > 0} 
                                 onBlur={() => this.validator.showMessageFor('Monthly Payment')}    
                                 />
-                                {this.validator.message('Monthly Payment', this.state.monthlyPayment, 'integer')}
+                                {this.validator.message('Monthly Payment', this.state.monthlyPayment, 'currency')}
                                 </td>
                             </tr>
                             <tr>
