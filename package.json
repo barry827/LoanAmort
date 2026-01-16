@@ -13,7 +13,7 @@
     "react-scripts": "3.4.1",
     "react-validation": "^3.0.7",
     "simple-react-validator": "^1.5.0",
-    "validator": "^13.1.1"
+    "validator": "^13.15.22"
   },
   "scripts": {
     "start": "react-scripts start",
